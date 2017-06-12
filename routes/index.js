@@ -1,5 +1,6 @@
 import express from 'express';
 import React from 'react';
+import fs from 'fs'
 import ReactDOMServer from 'react-dom/server';
 import { match, RouterContext } from 'react-router';
 import routes from '../views/src/routes';
@@ -7,8 +8,51 @@ import reducers from '../views/src/reducers/index';
 import { createStore } from 'redux';
 import { Provider } from 'react-redux';
 import { ADD_ITEM } from '../views/src/actions/list_actions';
+import commandLine from '../helpers/commandLine'
 
 let router = express.Router();
+
+//En mi opinión, las lógicas de cada ruta deben ser cambiadas a un controller
+router.post('/homeworks', async (req, res) => {
+    try {
+        //1. Ejecutar comando de evaluación
+        console.log('Executing the evaluation script. Take a while ...')
+
+        const result = await commandLine(req.body)
+        console.log('stdout: ', result.stdout)
+        console.log('stderr: ', result.stderr)
+
+        //2. Leer archivo generado por el evaluador
+        const testsResults = fs.readFileSync('./scripts/evaluation.json', 'utf8')
+        console.log(testsResults)
+
+        //3. Calcular los resultados y la evaluación del alumnos
+        // Reglas:
+        // Si el usuario ya tiene datos sobre su desempeño ágil de la evaluación
+        // (estos se obtendrán de la api rest donde persistiran los datos), se calculará
+        // la nota final de inmediato, junto con el resultado en los puntos
+        // evaluados tanto técnicamente como en la parte ágil
+        // En caso contrario, se le informa al usuario el resultado técnico
+        // y se le deja en espera a ser notificado por mail que reingrese al sistema a ver
+        // su resultado.
+        // El resultado técnico debe guardarse en la base de datos
+
+        //Para los efectos de que el usuario pueda revisar sus resultados, habilitaremos
+        //una vista en una ruta de esta app donde el usuario podrá, ingresando su rut
+        //ver la información de la evaluación del grupo al que pertenece
+
+        //enviar payload de la evaluación
+        res.status(200).send(testsResults);
+    } catch (e) {
+        console.log(`ERROR: ${e.message}`)
+
+        //1. Formatear error según procedencia de este
+        //2. Enviar mensaje a usuario para que vuelva a reintentar
+        res.status(500).send(e.message)
+    }
+
+
+})
 
 router.get('/', (req, res) => {
     /*
