@@ -15,6 +15,6 @@ app.use('/stylesheets', express.static('./public/stylesheets'))
 app.use('/', router);
 app.use('/view/*', router)
 
-app.listen(3000, function () {
+app.listen(80, function () {
 	console.log('Hello World listening on port 3000!')
 })

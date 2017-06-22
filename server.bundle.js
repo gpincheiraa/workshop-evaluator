@@ -245,37 +245,69 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var router = _express2.default.Router();
 
+//En mi opinión, las lógicas de cada ruta deben ser cambiadas a un controller
 router.post('/homeworks', function () {
   var _ref = (0, _asyncToGenerator3.default)(_regenerator2.default.mark(function _callee(req, res) {
-    var testsResults;
+    var result, testsResults;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            try {
-              //1. Ejecutar comando de evaluación
-              // console.log('Executing the evaluation script. Take a while ...')
-              //
-              // const result = await commandLine(req.body)
-              // console.log('stdout: ', result.stdout)
-              // console.log('stderr: ', result.stderr)
+            _context.prev = 0;
 
-              //2. Leer archivo generado por el evaluador
-              testsResults = _fs2.default.readFileSync('./scripts/evaluation.json', 'utf8');
+            //1. Ejecutar comando de evaluación
+            console.log('Executing the evaluation script. Take a while ...');
 
-              console.log(testsResults);
-              res.status(200).send(testsResults);
-            } catch (e) {
-              console.log('ERROR: ' + e.message);
-              res.status(500).send(e.message);
-            }
+            _context.next = 4;
+            return (0, _commandLine2.default)(req.body);
 
-          case 1:
+          case 4:
+            result = _context.sent;
+
+            console.log('stdout: ', result.stdout);
+            console.log('stderr: ', result.stderr);
+
+            //2. Leer archivo generado por el evaluador
+            testsResults = _fs2.default.readFileSync('./scripts/evaluation.json', 'utf8');
+
+            console.log(testsResults);
+
+            //3. Calcular los resultados y la evaluación del alumnos
+            // Reglas:
+            // Si el usuario ya tiene datos sobre su desempeño ágil de la evaluación
+            // (estos se obtendrán de la api rest donde persistiran los datos), se calculará
+            // la nota final de inmediato, junto con el resultado en los puntos
+            // evaluados tanto técnicamente como en la parte ágil
+            // En caso contrario, se le informa al usuario el resultado técnico
+            // y se le deja en espera a ser notificado por mail que reingrese al sistema a ver
+            // su resultado.
+            // El resultado técnico debe guardarse en la base de datos
+
+            //Para los efectos de que el usuario pueda revisar sus resultados, habilitaremos
+            //una vista en una ruta de esta app donde el usuario podrá, ingresando su rut
+            //ver la información de la evaluación del grupo al que pertenece
+
+            //enviar payload de la evaluación
+            res.status(200).send(testsResults);
+            _context.next = 16;
+            break;
+
+          case 12:
+            _context.prev = 12;
+            _context.t0 = _context['catch'](0);
+
+            console.log('ERROR: ' + _context.t0.message);
+
+            //1. Formatear error según procedencia de este
+            //2. Enviar mensaje a usuario para que vuelva a reintentar
+            res.status(500).send(_context.t0.message);
+
+          case 16:
           case 'end':
             return _context.stop();
         }
       }
-    }, _callee, undefined);
+    }, _callee, undefined, [[0, 12]]);
   }));
 
   return function (_x, _x2) {
@@ -420,14 +452,17 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var app = (0, _express2.default)();
 
+//POST should be migrated to REST Api
+//parse body requests
 app.use(_bodyParser2.default.json());
+
 app.use('/bin', _express2.default.static('./bin'));
 app.use('/stylesheets', _express2.default.static('./public/stylesheets'));
 
 app.use('/', _index2.default);
 app.use('/view/*', _index2.default);
 
-app.listen(3000, function () {
+app.listen(80, function () {
 	console.log('Hello World listening on port 3000!');
 });
 
